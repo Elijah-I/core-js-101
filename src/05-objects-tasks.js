@@ -39,8 +39,8 @@ function Rectangle(width, height) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 /**
@@ -54,8 +54,8 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  return new proto.constructor(...Object.values(JSON.parse(json)));
 }
 
 /**
@@ -112,35 +112,103 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
-const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
-  },
+const cssSelectorBuilder = (function IFFE() {
+  class Keeper {
+    constructor() {
+      Object.setPrototypeOf(this, cssSelectorBuilder);
+    }
+  }
 
-  id(/* value */) {
-    throw new Error('Not implemented');
-  },
+  return {
+    state: {
+      result: [],
+      callStack: [],
+      callOnce: ['element', 'id', 'pseudo-element'],
+      canCall: [
+        'element',
+        'id',
+        'class',
+        'attribute',
+        'pseudo-class',
+        'pseudo-element',
+        'combine',
+      ],
+    },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
-  },
+    store(value, type) {
+      this.validate(type);
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
-  },
+      const keeper = new Keeper();
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
-  },
+      keeper.state = {
+        result: this.state.result.concat(value),
+        callStack: this.state.callStack.concat(type),
+        callOnce: [...this.state.callOnce],
+        canCall: [...this.state.canCall].slice(
+          this.state.canCall.indexOf(type),
+        ),
+      };
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
-  },
+      return keeper;
+    },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
-  },
-};
+    validate(type) {
+      // check call once
+      const inCallStack = this.state.callStack.includes(type);
+      const mustCallOnce = this.state.callOnce.includes(type);
+
+      if (inCallStack && mustCallOnce) {
+        throw Error(
+          'Element, id and pseudo-element should not occur more then one time inside the selector',
+        );
+      }
+
+      // check call oreder
+      const cantCallNow = !this.state.canCall.includes(type);
+
+      if (cantCallNow) {
+        throw Error(
+          'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element',
+        );
+      }
+    },
+
+    element(value) {
+      return this.store(value, 'element');
+    },
+
+    id(value) {
+      return this.store(`#${value}`, 'id');
+    },
+
+    class(value) {
+      return this.store(`.${value}`, 'class');
+    },
+
+    attr(value) {
+      return this.store(`[${value}]`, 'attribute');
+    },
+
+    pseudoClass(value) {
+      return this.store(`:${value}`, 'pseudo-class');
+    },
+
+    pseudoElement(value) {
+      return this.store(`::${value}`, 'pseudo-element');
+    },
+
+    combine(selector1, combinator, selector2) {
+      return this.store(
+        `${selector1.stringify()} ${combinator} ${selector2.stringify()}`,
+        'combine',
+      );
+    },
+
+    stringify() {
+      return this.state.result.join('');
+    },
+  };
+}());
 
 module.exports = {
   Rectangle,
