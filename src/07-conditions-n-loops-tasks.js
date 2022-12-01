@@ -45,9 +45,13 @@ function getFizzBuzz(num) {
  *   5  => 120
  *   10 => 3628800
  */
-function getFactorial(n, res = 1) {
-  if (n > 1) return getFactorial(n - 1, res * n);
-  return res;
+function getFactorial(n) {
+  return eval(
+    Array(n)
+      .fill(1)
+      .map((el, i) => el + i)
+      .join('*')
+  );
 }
 
 /**
@@ -133,11 +137,12 @@ function doRectanglesOverlap(rect1, rect2) {
   RectB.bottom = Math.abs(-RectB.top - RectB.height);
 
   if (
-    RectA.left >= RectB.right
-    || RectA.top >= RectB.bottom
-    || RectA.right <= RectB.left
-    || RectA.bottom <= RectB.top
-  ) return false;
+    RectA.left >= RectB.right ||
+    RectA.top >= RectB.bottom ||
+    RectA.right <= RectB.left ||
+    RectA.bottom <= RectB.top
+  )
+    return false;
 
   return true;
 }
@@ -171,8 +176,8 @@ function doRectanglesOverlap(rect1, rect2) {
  */
 function isInsideCircle(circle, point) {
   return (
-    (point.x - circle.center.x) ** 2 + (point.y - circle.center.y) ** 2
-    < circle.radius ** 2
+    (point.x - circle.center.x) ** 2 + (point.y - circle.center.y) ** 2 <
+    circle.radius ** 2
   );
 }
 
@@ -387,7 +392,8 @@ function isBracketsBalanced(str) {
     const brecket = breckets[i];
 
     if (OPEN_BRECKET.includes(brecket)) push = true;
-    else if (stack[stack.length - 1] !== CLOSE_BRECKET_PAIR[brecket]) push = true;
+    else if (stack[stack.length - 1] !== CLOSE_BRECKET_PAIR[brecket])
+      push = true;
 
     if (push) stack.push(brecket);
     else stack.pop();
